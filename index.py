@@ -149,9 +149,9 @@ def root():
 	return "Face Swap is running..."
 
 
-@app.route('/predict', methods=['GET', 'POST'])
-def root():
-	return "Face Swap is running..."
+# @app.route('/predict', methods=['GET', 'POST'])
+# def root():
+# 	return "Face Swap is running..."
 
 
 if __name__ == '__main__':
