@@ -15,7 +15,7 @@ from demo import make_animation
 
 sys.path.insert(0, 'wav2lip')
 
-import wav2lip.inference as lipsync
+# import wav2lip.inference as lipsync
 
 face_weights_dir = 'face_weights/'
 config_dir = 'first_order/config/'
@@ -119,7 +119,7 @@ def main():
 	source_image = 'input.jpg'
 	input_video = 'input.mp4'
 	out_no_audio = 'no_audio.mp4'
-	out_normal = 'output.mp4'
+	out_normal = 'output_gcp.mp4'
 	out_lip_synced = 'output_lip.mp4'
 	audio = 'input.mp3'
 	#Resize image and video to 256x256
@@ -132,13 +132,13 @@ def main():
 	video_add_mp3(out_no_audio, audio, out_normal)
 
 	# Produce lipsync result
-	args = lipsync.Arguments(
-		load_checkpoints='wav2lip_weights/wav2lip.pth',
-		face=out_no_audio,
-		audio=audio,
-		outfile=out_lip_synced
-	)
-	lipsync.predict(args)
+	# args = lipsync.Arguments(
+	# 	load_checkpoints='wav2lip_weights/wav2lip.pth',
+	# 	face=out_no_audio,
+	# 	audio=audio,
+	# 	outfile=out_lip_synced
+	# )
+	# lipsync.predict(args)
 
 
 
