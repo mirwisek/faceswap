@@ -6,6 +6,10 @@ from skimage.transform import resize
 from skimage import img_as_ubyte
 import subprocess	# used for audio extraction only
 
+from flask import Flask
+
+app = Flask(__name__)
+
 import sys
 # Change folder so the dependencies can find files, easily
 sys.path.insert(0, 'first_order')
@@ -140,8 +144,15 @@ def main():
 	# )
 	# lipsync.predict(args)
 
+@app.route('/', methods=['GET', 'POST'])
+def root():
+	return "Face Swap is running..."
 
+
+@app.route('/predict', methods=['GET', 'POST'])
+def root():
+	return "Face Swap is running..."
 
 
 if __name__ == '__main__':
-	main()
+	app.run(host='127.0.0.1', port=5000, debug=False)
