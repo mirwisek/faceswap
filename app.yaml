@@ -4,4 +4,4 @@ runtime_config:
 env: flex
 # entrypoint: gunicorn -b:$PORT index:app
 resources:
-  disk_size_gb: 10 
+  disk_size_gb: 20 
