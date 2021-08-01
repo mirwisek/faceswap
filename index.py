@@ -1,14 +1,16 @@
 import imageio
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from skimage.transform import resize
 from skimage import img_as_ubyte
 import subprocess	# used for audio extraction only
-
-from flask import Flask
+from flask import Flask, request, json, Response, send_file
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+app.config['UPLOAD_FOLDER'] = 'images/'
 
 import sys
 # Change folder so the dependencies can find files, easily
@@ -33,6 +35,17 @@ config = {
 
 # Change the key to reflect the configuration
 using_config = config['vox']
+
+# Check if input image is an allowed extension file
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Utility function to send responses to client
+def send_result(response=None, error='', status=200):
+    if response is None: response = {}
+    result = json.dumps({'result': response, 'error': error})
+    return Response(status=status, mimetype="application/json", response=result)
 
 # Load face model weights
 generator, kp_detector = load_checkpoints(
@@ -120,20 +133,20 @@ def video_add_mp3(source_vid, mp3_file, output_vid):
 # =====		END OF AUDIO SECTION	=====
 
 def main():
-	source_image = 'input.jpg'
-	input_video = 'input.mp4'
-	out_no_audio = 'no_audio.mp4'
-	out_normal = 'output_gcp.mp4'
-	out_lip_synced = 'output_lip.mp4'
-	audio = 'input.mp3'
-	#Resize image and video to 256x256
-	cropped_image = preprocess_image(source_image)
-	# Extract audio
-	video2mp3(input_video, audio)
-	source_video = preprocess_video(input_video)
-	# video saved to file after complete
-	make_video_prediction(cropped_image, source_video, out_no_audio)
-	video_add_mp3(out_no_audio, audio, out_normal)
+	# source_image = 'input.jpg'
+	# input_video = 'input.mp4'
+	# out_no_audio = 'no_audio.mp4'
+	# out_normal = 'output_gcp.mp4'
+	# out_lip_synced = 'output_lip.mp4'
+	# audio = 'input.mp3'
+	# #Resize image and video to 256x256
+	# cropped_image = preprocess_image(source_image)
+	# # Extract audio
+	# video2mp3(input_video, audio)
+	# source_video = preprocess_video(input_video)
+	# # video saved to file after complete
+	# make_video_prediction(cropped_image, source_video, out_no_audio)
+	# video_add_mp3(out_no_audio, audio, out_normal)
 
 	# Produce lipsync result
 	# args = lipsync.Arguments(
@@ -149,9 +162,43 @@ def root():
 	return "Face Swap is running..."
 
 
-# @app.route('/predict', methods=['GET', 'POST'])
-# def root():
-# 	return "Face Swap is running..."
+@app.route('/predict', methods=['GET', 'POST'])
+def predict():
+    # Input selection
+    # check if the post request has the file part
+    source_image = None
+    try:
+        source_image = request.files['image']
+    except KeyError:
+        return send_result(error='Please make sure to send image file with key `image`!', status=422)
+    if source_image.filename == '':
+        return send_result(error='No selected file', status=422)
+
+    if source_image and allowed_file(source_image.filename):
+        filename = secure_filename(source_image.filename)
+        source_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        input_video = 'input.mp4'
+        # Output file names
+        # The first generated result with no audio will be called:
+        out_no_audio = 'no_audio.mp4'
+        # After combining audio will be called:
+        out_normal = 'output_gcp.mp4'
+        # Second variant with lip synced alogrithm be called:
+        out_lip_synced = 'output_lip.mp4'
+        # Audio extraction file will be called:
+        audio = 'input.mp3'
+        #Resize image and video to 256x256
+        cropped_image = preprocess_image(source_image)
+        # Extract audio
+        video2mp3(input_video, audio)
+        source_video = preprocess_video(input_video)
+        # video saved to file after complete
+        make_video_prediction(cropped_image, source_video, out_no_audio)
+        video_add_mp3(out_no_audio, audio, out_normal)
+
+        return send_file(out_normal, as_attachment=True)
+    else:
+        return send_result(error='Please make sure you send only image file with key `image`!', status=422)
 
 
 if __name__ == '__main__':
