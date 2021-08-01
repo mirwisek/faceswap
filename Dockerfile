@@ -13,5 +13,5 @@ RUN pip3 install \
   git+https://github.com/1adrianb/face-alignment \
   -r requirements.txt
 
-EXPOSE 8080
-CMD [ "gunicorn", "index:app", "-b", ":8080"]
+EXPOSE 3000
+CMD [ "gunicorn", "index:app", "-b", ":3000"]
