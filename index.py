@@ -3,14 +3,17 @@ import numpy as np
 from skimage.transform import resize
 from skimage import img_as_ubyte
 import subprocess	# used for audio extraction only
-from flask import Flask, request, json, Response, send_file
+from flask import Flask, send_from_directory, request, json, Response, send_file
 from werkzeug.utils import secure_filename
 import os
+import uuid
+import time
 
 app = Flask(__name__)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-app.config['UPLOAD_FOLDER'] = 'images/'
+UPLOAD_FOLDER = 'images/'
+DOWNLOAD_FOLDER = 'videos/'
 
 import sys
 # Change folder so the dependencies can find files, easily
@@ -18,6 +21,13 @@ sys.path.insert(0, 'first_order')
 
 from demo import load_checkpoints
 from demo import make_animation
+
+# Make sure folders exist
+def make_dir(directory):
+	if not os.path.exists(directory): os.makedirs(directory)
+
+make_dir(UPLOAD_FOLDER)
+make_dir(DOWNLOAD_FOLDER)
 
 sys.path.insert(0, 'wav2lip')
 
@@ -36,16 +46,28 @@ config = {
 # Change the key to reflect the configuration
 using_config = config['vox']
 
+# Generate random video name
+def random_name():
+    return uuid.uuid4().hex
+
 # Check if input image is an allowed extension file
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # Utility function to send responses to client
 def send_result(response=None, error='', status=200):
     if response is None: response = {}
     result = json.dumps({'result': response, 'error': error})
     return Response(status=status, mimetype="application/json", response=result)
+
+
+# Download videos
+@app.route('/videos/<path:filename>', methods=['GET','POST'])
+def download(filename):
+    downloads = DOWNLOAD_FOLDER
+    return send_from_directory(directory=downloads, filename=filename)
 
 # Load face model weights
 generator, kp_detector = load_checkpoints(
@@ -156,6 +178,7 @@ def main():
 	# 	outfile=out_lip_synced
 	# )
 	# lipsync.predict(args)
+	pass
 
 @app.route('/', methods=['GET', 'POST'])
 def root():
@@ -164,6 +187,7 @@ def root():
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
+    start = time.now()
     # Input selection
     # check if the post request has the file part
     source_image = None
@@ -176,13 +200,14 @@ def predict():
 
     if source_image and allowed_file(source_image.filename):
         filename = secure_filename(source_image.filename)
-        source_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        source_image.save(os.path.join(UPLOAD_FOLDER, filename))
         input_video = 'input.mp4'
         # Output file names
         # The first generated result with no audio will be called:
         out_no_audio = 'no_audio.mp4'
         # After combining audio will be called:
-        out_normal = 'output_gcp.mp4'
+        ouptut_id = random_name()
+        out_normal = '{}.mp4'.format(ouptut_id)
         # Second variant with lip synced alogrithm be called:
         out_lip_synced = 'output_lip.mp4'
         # Audio extraction file will be called:
@@ -196,7 +221,11 @@ def predict():
         make_video_prediction(cropped_image, source_video, out_no_audio)
         video_add_mp3(out_no_audio, audio, out_normal)
 
-        return send_file(out_normal, as_attachment=True)
+        processing = '{:.2f}s'.format((time.time() - start) / 1000)
+        return send_result(response={
+            'id': ouptut_id,
+            'processing_time': processing
+        }, status=200)
     else:
         return send_result(error='Please make sure you send only image file with key `image`!', status=422)
 

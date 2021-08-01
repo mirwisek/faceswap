@@ -1,6 +1,8 @@
-from flask import Flask, request, json, Response, send_file
+from flask import Flask, request, send_from_directory, json, Response, send_file
 from werkzeug.utils import secure_filename
 import os
+import uuid
+import time
 
 app = Flask(__name__)
 
@@ -8,7 +10,11 @@ app = Flask(__name__)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 app.config['UPLOAD_FOLDER'] = 'images/'
+app.config['DOWNLOAD_FOLDER'] = 'videos/'
 
+
+def random_name():
+    return uuid.uuid4().hex
 
 def send_result(response=None, error='', status=200):
     if response is None: response = {}
@@ -21,12 +27,19 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/videos/<path:filename>', methods=['GET','POST'])
+def download(filename):
+    downloads = app.config['DOWNLOAD_FOLDER']
+    return send_from_directory(directory=downloads, filename=filename)
+
+
 @app.route('/', methods=['GET', 'POST'])
 def root():
 	return "Face Swap is running..."
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
+    start = time.time()
     # Input selection
     # check if the post request has the file part
     file = None
@@ -60,8 +73,13 @@ def predict():
         # video_add_mp3(out_no_audio, audio, out_normal)
 
         video = 'output_gcp.mp4'
+        time.sleep(10)
         # send_file(source_image, as_attachment=True)
-        return 'hey'
+        processing = '{:.2f}'.format((time.time() - start) / 1000)
+        return send_result(response={
+            'id': random_name(),
+            'processing_time': str(processing) + 's'
+        }, status=200)
     else:
         return send_result(error='Please make sure you send only image file with key `image`!', status=422)
 
