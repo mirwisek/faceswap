@@ -14,4 +14,4 @@ RUN pip3 install \
   -r requirements.txt
 
 EXPOSE 8080
-ENTRYPOINT [ "python index.py" ]
+CMD [ "gunicorn", "index:app", "-b", ":8080"]
