@@ -1,4 +1,5 @@
-FROM nvcr.io/nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04
+# FROM nvcr.io/nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04
+FROM kaixhin/cudnn:latest
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update \
  && DEBIAN_FRONTEND=noninteractive apt-get -qqy install python3-pip ffmpeg git less nano libsm6 libxext6 libxrender-dev \
