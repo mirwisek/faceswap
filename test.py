@@ -37,6 +37,16 @@ def download(filename):
 def root():
 	return "Face Swap is running..."
 
+# Health checkup required by GCP App Engine
+@app.route('/liveness_check', methods=['GET', 'POST'])
+def liveness_check():
+	return '', 200
+
+
+@app.route('/readiness_check', methods=['GET', 'POST'])
+def readiness_check():
+	return '', 200
+
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
     start = time.time()
