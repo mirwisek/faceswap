@@ -67,7 +67,7 @@ def send_result(response=None, error='', status=200):
 @app.route('/videos/<path:filename>', methods=['GET','POST'])
 def download(filename):
     downloads = DOWNLOAD_FOLDER
-    return send_from_directory(directory=downloads, filename=filename)
+    return send_from_directory(directory=downloads, filename=filename + '.mp4')
 
 # Load face model weights
 generator, kp_detector = load_checkpoints(
@@ -155,20 +155,20 @@ def video_add_mp3(source_vid, mp3_file, output_vid):
 # =====		END OF AUDIO SECTION	=====
 
 def main():
-	# source_image = 'input.jpg'
-	# input_video = 'input.mp4'
-	# out_no_audio = 'no_audio.mp4'
-	# out_normal = 'output_gcp.mp4'
+	source_image = 'input.jpg'
+	input_video = 'input.mp4'
+	out_no_audio = 'no_audio.mp4'
+	out_normal = 'output_gcp.mp4'
 	# out_lip_synced = 'output_lip.mp4'
-	# audio = 'input.mp3'
+	audio = 'input.mp3'
 	# #Resize image and video to 256x256
-	# cropped_image = preprocess_image(source_image)
+	cropped_image = preprocess_image(source_image)
 	# # Extract audio
-	# video2mp3(input_video, audio)
-	# source_video = preprocess_video(input_video)
+	video2mp3(input_video, audio)
+	source_video = preprocess_video(input_video)
 	# # video saved to file after complete
-	# make_video_prediction(cropped_image, source_video, out_no_audio)
-	# video_add_mp3(out_no_audio, audio, out_normal)
+	make_video_prediction(cropped_image, source_video, out_no_audio)
+	video_add_mp3(out_no_audio, audio, out_normal)
 
 	# Produce lipsync result
 	# args = lipsync.Arguments(
@@ -182,7 +182,7 @@ def main():
 
 @app.route('/', methods=['GET', 'POST'])
 def root():
-	return "Face Swap is running..."
+	return "Face App is running..."
 
 
 @app.route('/predict', methods=['GET', 'POST'])
@@ -231,4 +231,5 @@ def predict():
 
 
 if __name__ == '__main__':
+	# main()
 	app.run(host='0.0.0.0', port=8080, debug=False)

@@ -1,18 +1,21 @@
 FROM nvcr.io/nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04
-# FROM kaixhin/cudnn:latest
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qq update \
- && DEBIAN_FRONTEND=noninteractive apt-get -qqy install python3-pip ffmpeg git less nano libsm6 libxext6 libxrender-dev \
+ && DEBIAN_FRONTEND=noninteractive apt-get -qqy install wget python3-pip ffmpeg git less nano libsm6 libxext6 libxrender-dev \
  && rm -rf /var/lib/apt/lists/*
 
 COPY . /app/
 WORKDIR /app
 
-RUN pip3 install --upgrade pip
-RUN pip3 install \
-  https://download.pytorch.org/whl/cu100/torch-1.0.0-cp36-cp36m-linux_x86_64.whl \
-  git+https://github.com/1adrianb/face-alignment \
-  -r requirements.txt
+RUN bash -c "cd /tmp; wget https://repo.continuum.io/archive/Anaconda3-5.0.1-Linux-x86_64.sh; ls; pwd"
+RUN bash /tmp/Anaconda3-5.0.1-Linux-x86_64.sh -b
+RUN rm /tmp/Anaconda3-5.0.1-Linux-x86_64.sh
+
+ENV PATH /root/anaconda3/bin:$PATH
+
+RUN /root/anaconda3/bin/conda create --name faceapp python=3.6 pip
+
+RUN /root/anaconda3/envs/faceapp/bin/pip install -r /app/requirements.txt
 
 EXPOSE 8080
-CMD [ "gunicorn", "index:app", "-b", ":8080"]
+CMD [ "/root/anaconda3/envs/faceapp/bin/gunicorn", "index:app", "-b", ":8080"]
